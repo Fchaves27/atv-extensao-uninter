@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Estoque - Gestão Pequenos Negócios</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- ESTILO GERAL (MANTIDO IGUAL) --- */
+        :root { --primary-color: #2563eb; --bg-color: #f3f4f6; --text-color: #1f2937; --danger-color: #dc2626; --success-color: #16a34a; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .header h1 { font-size: 1.5rem; color: #111827; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+
+        /* Filtros e Tabela */
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+        .table-container { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; font-size: 0.9rem; text-transform: uppercase; }
+        tr:hover { background-color: #f9fafb; }
+        
+        /* Badges e Botões */
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-ok { background-color: #dcfce7; color: var(--success-color); }
+        .badge-low { background-color: #fee2e2; color: var(--danger-color); }
+        .action-btn { background: none; border: none; cursor: pointer; padding: 6px; font-size: 1.1rem; transition: color 0.2s; }
+        .btn-delete { color: #dc2626; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; padding: 30px; border-radius: 8px; width: 500px; max-width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-secondary { background-color: #e5e7eb; color: #374151; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Controle de Estoque</h1>
+                <p style="color: #6b7280; font-size: 0.9rem;">Gerencie produtos, preços e reposição.</p>
+            </div>
+            <button class="btn btn-primary" onclick="abrirModal()">
+                <i class="fas fa-plus"></i> Novo Produto
+            </button>
+        </div>
+
+        <div class="filters">
+            <input type="text" class="search-input" placeholder="🔍 Buscar por nome, SKU ou categoria..." id="searchInput" onkeyup="filtrarTabela()">
+        </div>
+
+        <div class="table-container">
+            <table id="tabelaEstoque">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Preço Custo</th>
+                        <th>Preço Venda</th>
+                        <th style="text-align: center;">Qtd.</th>
+                        <th style="text-align: center;">Status</th>
+                        <th style="text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalProduto">
+        <div class="modal">
+            <h2 style="margin-bottom: 20px;">Cadastrar Produto</h2>
+            <form id="formCadastro">
+                <div class="form-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="nome" placeholder="Ex: Detergente Líquido" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="categoria" required>
+                        <option value="">Selecione...</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Limpeza">Limpeza</option>
+                        <option value="Vestuário">Vestuário</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Preço Custo (R$)</label>
+                        <input type="number" id="precoCusto" step="0.01" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Preço Venda (R$)</label>
+                        <input type="number" id="precoVenda" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade Atual</label>
+                    <input type="number" id="quantidade" required>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/produtos';
+
+        // 1. CARREGAR (GET)
+        async function carregarDadosDoBackend() {
+            try {
+                const response = await fetch(API_URL);
+                const produtos = await response.json();
+                
+                const tabela = document.querySelector("#tabelaEstoque tbody");
+                tabela.innerHTML = ""; // Limpa a tabela
+
+                produtos.forEach(produto => {
+                    // Lógica visual do status
+                    let statusBadge = produto.quantidade <= produto.estoqueMinimo 
+                        ? '<span class="badge badge-low">REPOR</span>'
+                        : '<span class="badge badge-ok">OK</span>';
+
+                    let tr = `
+                        <tr>
+                            <td>
+                                <strong>${produto.nome}</strong><br>
+                                <span style="font-size:0.8rem; color:#6b7280;">SKU: ${produto.sku || '-'}</span>
+                            </td>
+                            <td>${produto.categoria}</td>
+                            <td>R$ ${produto.precoCusto}</td>
+                            <td>R$ ${produto.precoVenda}</td>
+                            <td style="text-align: center;">${produto.quantidade}</td>
+                            <td style="text-align: center;">${statusBadge}</td>
+                            <td style="text-align: right;">
+                                <button class="action-btn btn-delete" onclick="deletarProduto(${produto.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tabela.innerHTML += tr;
+                });
+            } catch (error) {
+                console.error("Erro ao conectar na API:", error);
+                alert("Erro ao conectar no servidor. Verifique se o backend está rodando.");
+            }
+        }
+
+        // 2. SALVAR (POST)
+        document.getElementById('formCadastro').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Impede a página de recarregar
+
+            // Pega os dados dos inputs
+            const dadosProduto = {
+                nome: document.getElementById('nome').value,
+                categoria: document.getElementById('categoria').value,
+                precoCusto: parseFloat(document.getElementById('precoCusto').value),
+                precoVenda: parseFloat(document.getElementById('precoVenda').value),
+                quantidade: parseInt(document.getElementById('quantidade').value),
+                sku: Math.floor(Math.random() * 10000).toString() // Gera um SKU aleatório simples
+            };
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosProduto)
+                });
+                
+                fecharModal();
+                carregarDadosDoBackend(); // Atualiza a tabela
+                document.getElementById('formCadastro').reset(); // Limpa o formulário
+
+            } catch (error) {
+                alert("Erro ao salvar produto.");
+                console.error(error);
+            }
+        });
+
+        // 3. DELETAR (DELETE)
+        async function deletarProduto(id) {
+            if (confirm("Tem certeza que deseja excluir este produto?")) {
+                try {
+                    await fetch(`${API_URL}/${id}`, {
+                        method: 'DELETE'
+                    });
+                    carregarDadosDoBackend(); // Atualiza a tabela
+                } catch (error) {
+                    alert("Erro ao excluir.");
+                }
+            }
+        }
+
+        // --- Funções Visuais (Modal e Filtro) ---
+        function abrirModal() {
+            document.getElementById('modalProduto').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modalProduto').classList.remove('active');
+        }
+
+        document.getElementById('modalProduto').addEventListener('click', function(e) {
+            if (e.target === this) fecharModal();
+        });
+
+        function filtrarTabela() {
+            const input = document.getElementById("searchInput");
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById("tabelaEstoque");
+            const tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let tdNome = tr[i].getElementsByTagName("td")[0];
+                let tdCat = tr[i].getElementsByTagName("td")[1];
+                if (tdNome || tdCat) {
+                    let txtValueNome = tdNome.textContent || tdNome.innerText;
+                    let txtValueCat = tdCat.textContent || tdCat.innerText;
+                    if (txtValueNome.toUpperCase().indexOf(filter) > -1 || txtValueCat.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        // Carrega os dados ao abrir a página
+        window.onload = carregarDadosDoBackend;
+    </script>
+</body>
+</html>
