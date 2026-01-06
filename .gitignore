@@ -1,8 +1,8 @@
-# Dependências do Node (Pesado!)
+# Dependências do Node
 node_modules/
 /backend/node_modules/
 
-# Banco de dados local (Não envie seus dados de teste)
+# Banco de dados local
 *.sqlite
 *.db
 
