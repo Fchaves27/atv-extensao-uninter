@@ -1,5 +1,6 @@
 const Produto = require('../models/Produto');
 const Venda = require('../models/Venda');
+const Movimentacao = require('../models/Movimentacao');
 
 module.exports = {
     async realizarVenda(req, res) {
@@ -32,6 +33,13 @@ module.exports = {
                 valorTotal: valorTotalVenda,
                 formaPagamento: formaPagamento, // Salva se foi Pix, Dinheiro, etc.
                 dataVenda: new Date()
+            });
+
+            await Movimentacao.create({
+                tipo: 'SAIDA',
+                quantidade: quantidade,
+                nomeProdutoSnapshot: produto.nome,
+                observacao: `Venda no PDV (Pagamento: ${formaPagamento})`
             });
 
             return res.json({

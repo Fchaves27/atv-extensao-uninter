@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
+        /* --- ESTILO GERAL --- */
         :root { 
             --primary-color: #2563eb; 
             --bg-color: #f3f4f6; 
@@ -113,6 +114,7 @@
     <script>
         const API_URL = 'http://localhost:3000';
 
+        // 1. Carregar produtos e preencher o Select
         async function carregarProdutos() {
             try {
                 const res = await fetch(`${API_URL}/produtos`);
@@ -122,30 +124,66 @@
                 select.innerHTML = '<option value="">Selecione um produto...</option>';
 
                 produtosLista.forEach(p => {
+                    // Só mostra se tem estoque positivo
                     if (p.quantidade > 0) {
-                        select.innerHTML += `<option value="${p.id}" data-preco="${p.precoVenda}">
+                        // Guardamos preço e estoque nos atributos 'data-' para usar depois
+                        select.innerHTML += `<option value="${p.id}" data-preco="${p.precoVenda}" data-estoque="${p.quantidade}">
                             ${p.nome} (Disp: ${p.quantidade}) - R$ ${p.precoVenda}
                         </option>`;
                     }
                 });
             } catch (erro) {
-                alert("Erro ao conectar no servidor.");
+                alert("Erro ao conectar no servidor. Verifique se o backend está rodando.");
             }
         }
 
+        // 2. Calcular Preço Total
         function atualizarTotal() {
             const select = document.getElementById('produtoSelect');
-            const qtd = document.getElementById('qtdInput').value;
+            const qtdInput = document.getElementById('qtdInput');
+            
+            // Se não selecionou nada, para
+            if (select.selectedIndex <= 0) return;
+
             const option = select.options[select.selectedIndex];
-            const preco = option.getAttribute('data-preco') || 0;
+            const preco = parseFloat(option.getAttribute('data-preco')) || 0;
+            const qtd = parseInt(qtdInput.value) || 0;
 
             const total = preco * qtd;
             document.getElementById('totalEstimado').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        document.getElementById('produtoSelect').addEventListener('change', atualizarTotal);
-        document.getElementById('qtdInput').addEventListener('input', atualizarTotal);
+        // Evento: Quando troca o produto
+        document.getElementById('produtoSelect').addEventListener('change', () => {
+            document.getElementById('qtdInput').value = 1; // Reseta qtd
+            atualizarTotal();
+        });
 
+        // Evento: Quando digita a quantidade (VALIDAÇÃO DE ESTOQUE)
+        document.getElementById('qtdInput').addEventListener('input', function() {
+            const select = document.getElementById('produtoSelect');
+            
+            if (select.selectedIndex <= 0) return;
+
+            const option = select.options[select.selectedIndex];
+            const estoqueMaximo = parseInt(option.getAttribute('data-estoque')) || 0;
+            let qtdDigitada = parseInt(this.value);
+
+            // Bloqueio 1: Não pode vender mais que o estoque
+            if (qtdDigitada > estoqueMaximo) {
+                alert(`Atenção: Estoque insuficiente! Máximo disponível: ${estoqueMaximo}`);
+                this.value = estoqueMaximo; 
+            }
+            
+            // Bloqueio 2: Não pode ser zero ou negativo
+            if (qtdDigitada < 1 || isNaN(qtdDigitada)) {
+                this.value = 1;
+            }
+
+            atualizarTotal();
+        });
+
+        // 3. Enviar Venda (POST)
         document.getElementById('formVenda').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -161,33 +199,39 @@
                     body: JSON.stringify({ 
                         produto_id: produtoId, 
                         quantidade: parseInt(quantidade),
-                        formaPagamento: pagamento
+                        formaPagamento: pagamento // Envia a forma de pagamento
                     })
                 });
 
                 const data = await res.json();
 
                 if (res.ok) {
+                    // Sucesso
                     msgDiv.className = 'sucesso';
-                    msgDiv.innerText = `✅ Venda realizada! Pagamento: ${pagamento}`;
+                    msgDiv.innerText = `✅ Venda realizada! Pagamento: ${pagamento}. Novo estoque: ${data.novoEstoque}`;
                     msgDiv.style.display = 'block';
                     
+                    // Atualiza a lista para o estoque baixar no select também
                     carregarProdutos();
                     document.getElementById('qtdInput').value = 1;
-                    atualizarTotal();
-                    setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
+                    document.getElementById('totalEstimado').innerText = "R$ 0,00";
+                    
+                    // Some com a mensagem depois de 4 segundos
+                    setTimeout(() => { msgDiv.style.display = 'none'; }, 4000);
                 } else {
+                    // Erro (Ex: Estoque acabou enquanto digitava)
                     msgDiv.className = 'erro';
                     msgDiv.innerText = `❌ Erro: ${data.error}`;
                     msgDiv.style.display = 'block';
                 }
             } catch (erro) {
                 msgDiv.className = 'erro';
-                msgDiv.innerText = "Erro de conexão.";
+                msgDiv.innerText = "Erro de conexão com o servidor.";
                 msgDiv.style.display = 'block';
             }
         });
 
+        // Inicia carregando os produtos
         window.onload = carregarProdutos;
     </script>
 </body>

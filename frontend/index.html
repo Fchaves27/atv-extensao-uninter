@@ -3,92 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Principal - Gestão</title>
+    <title>Hub Principal - Gestão</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root { --primary-color: #2563eb; --bg-color: #f3f4f6; --text-color: #1f2937; --card-bg: #ffffff; }
+        /* --- ESTILO GERAL --- */
+        :root { 
+            --primary-color: #2563eb; 
+            --bg-color: #f3f4f6; 
+            --text-color: #1f2937; 
+            --card-bg: #ffffff; 
+            --manager-bg: #f5f3ff;
+            --manager-border: #8b5cf6;
+            --manager-text: #4c1d95;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        
         .container { max-width: 1000px; margin: 0 auto; }
 
+        /* Barra Superior */
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .user-info { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        select#roleSwitcher { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        .top-bar h1 { color: #111827; font-size: 1.8rem; }
 
+        /* Simulador de Login */
+        .user-info { 
+            display: flex; align-items: center; gap: 10px; background: white; 
+            padding: 10px 20px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        select#roleSwitcher { padding: 5px; border-radius: 6px; border: 1px solid #d1d5db; background: #f9fafb; cursor: pointer; }
+
+        /* Dashboard (Gráfico) */
         .chart-section { 
             background: var(--card-bg); padding: 30px; border-radius: 15px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;
             display: flex; flex-direction: column; align-items: center;
         }
-        .chart-container { position: relative; height: 250px; width: 250px; margin-top: 20px; }
+        .chart-container { position: relative; height: 250px; width: 250px; margin-top: 10px; }
         
-        .finance-summary { display: flex; gap: 30px; margin-top: 20px; text-align: center; }
-        .finance-item h4 { font-size: 0.9rem; color: #6b7280; font-weight: normal; }
-        .finance-item p { font-size: 1.2rem; font-weight: bold; }
+        /* Legenda */
+        .finance-summary { 
+            display: flex; gap: 40px; margin-top: 25px; text-align: center; 
+            border-top: 1px solid #e5e7eb; padding-top: 20px; width: 100%; justify-content: center;
+        }
+        .finance-item h4 { font-size: 0.9rem; color: #6b7280; font-weight: normal; margin-bottom: 5px; }
+        .finance-item p { font-size: 1.4rem; font-weight: bold; }
         .text-red { color: #dc2626; }
         .text-green { color: #16a34a; }
 
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+        /* Menu Principal */
+        .menu-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; 
+        }
+        
         .menu-btn {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: var(--card-bg); padding: 30px 20px; border-radius: 15px;
             text-decoration: none; color: var(--text-color); font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s, background-color 0.2s;
-            border: none; cursor: pointer; width: 100%; font-size: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s;
+            border: none; cursor: pointer; font-size: 1.1rem; gap: 15px;
         }
-        .menu-btn:hover { transform: translateY(-3px); background-color: #f9fafb; }
-        .menu-btn i { font-size: 2.5rem; margin-bottom: 15px; color: var(--primary-color); }
-        .btn-manager { background-color: #e0e7ff; color: #3730a3; }
-        .btn-manager i { color: #4f46e5; }
-        #btnFuncionarioWrapper { display: none; }
+        .menu-btn:hover { transform: translateY(-3px); background-color: #eff6ff; }
+        .menu-btn i { font-size: 2.5rem; color: var(--primary-color); }
+
+        /* --- ÁREA GERENCIAL (Exclusiva) --- */
+        #managerSection {
+            display: none; /* Escondido por padrão */
+            grid-column: 1 / -1; /* Ocupa toda a largura */
+            background-color: var(--manager-bg);
+            border: 2px dashed var(--manager-border);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 10px;
+        }
+        
+        .manager-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: var(--manager-text);
+        }
+        
+        .manager-grid {
+            display: flex; gap: 20px;
+        }
+
+        .btn-manager {
+            flex: 1; /* Botões ocupam tamanho igual */
+            background-color: white; color: var(--manager-text);
+            border: 1px solid var(--manager-border);
+        }
+        .btn-manager i { color: #7c3aed; }
+        .btn-manager:hover { background-color: #ede9fe; }
+
     </style>
 </head>
 <body>
+
     <div class="container">
         <div class="top-bar">
-            <h1>Painel Principal</h1>
+            <h1>Gestão Financeira</h1>
             <div class="user-info">
-                <i class="fas fa-user-circle fa-lg"></i>
+                <i class="fas fa-user-circle fa-lg" style="color: #6b7280;"></i>
+                <span>Acesso:</span>
                 <select id="roleSwitcher" onchange="mudarCargo()">
-                    <option value="vendedor">Sou Vendedor</option>
-                    <option value="gerente">Sou Gerente</option>
+                    <option value="vendedor">Vendedor</option>
+                    <option value="gerente">Gerente</option>
                 </select>
             </div>
         </div>
 
         <div class="chart-section">
-            <h3>Balanço Financeiro</h3>
-            <p style="color: #6b7280; font-size: 0.9rem;">Investimento em Estoque vs. Faturamento</p>
+            <h3 style="color: #374151;">Balanço da Empresa</h3>
+            <p style="color: #9ca3af; font-size: 0.9rem;">Custo de Estoque vs. Faturamento</p>
+            
             <div class="chart-container">
                 <canvas id="graficoBalanco"></canvas>
             </div>
+
             <div class="finance-summary">
                 <div class="finance-item">
-                    <h4>Em Estoque (Custo)</h4>
+                    <h4>Dinheiro em Estoque</h4>
                     <p id="txtInvestimento" class="text-red">R$ 0,00</p>
                 </div>
                 <div class="finance-item">
-                    <h4>Total Vendido</h4>
+                    <h4>Faturamento Total</h4>
                     <p id="txtFaturamento" class="text-green">R$ 0,00</p>
                 </div>
             </div>
         </div>
 
         <div class="menu-grid">
-            <a href="pdv.html" class="menu-btn"><i class="fas fa-cash-register"></i> Nova Venda</a>
-            <a href="clientes.html" class="menu-btn"><i class="fas fa-users"></i> Clientes</a>
-            <a href="estoque.html" class="menu-btn"><i class="fas fa-boxes"></i> Estoque</a>
-            <div id="btnFuncionarioWrapper">
-                <button class="menu-btn btn-manager" onclick="alert('Funcionalidade futura')">
-                    <i class="fas fa-user-tie"></i> Cadastrar Funcionário
-                </button>
+            <a href="pdv.html" class="menu-btn">
+                <i class="fas fa-cash-register"></i> <span>Nova Venda</span>
+            </a>
+
+            <a href="estoque.html" class="menu-btn">
+                <i class="fas fa-boxes"></i> <span>Estoque</span>
+            </a>
+
+            <a href="#" class="menu-btn" onclick="alert('Em desenvolvimento')">
+                <i class="fas fa-users"></i> <span>Clientes</span>
+            </a>
+
+            <div id="managerSection">
+                <div class="manager-header">
+                    <i class="fas fa-lock"></i>
+                    <h3>Área Gerencial</h3>
+                </div>
+                
+                <div class="manager-grid">
+                    <a href="historico.html" class="menu-btn btn-manager">
+                        <i class="fas fa-list-ul"></i>
+                        <span>Auditoria / Logs</span>
+                    </a>
+
+                    <button class="menu-btn btn-manager" onclick="alert('Tela de cadastro de funcionários...')">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Cadastrar Equipe</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- 1. Gráfico ---
         let graficoBalanco;
         async function carregarBalanco() {
             try {
@@ -104,28 +183,39 @@
                 graficoBalanco = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Investido em Estoque (Custo)', 'Faturamento (Vendas)'],
+                        labels: ['Investido (Custo)', 'Faturamento (Vendas)'],
                         datasets: [{
                             data: [dados.investimento, dados.faturamento],
                             backgroundColor: ['#ef4444', '#22c55e'],
-                            borderWidth: 0,
+                            borderWidth: 0
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
-            } catch (error) { console.error("Erro ao carregar gráfico:", error); }
+            } catch (error) { console.error("Erro gráfico", error); }
         }
 
         function formatarMoeda(valor) {
             return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
+        // --- 2. Lógica de Cargo ---
         function mudarCargo() {
             const cargo = document.getElementById('roleSwitcher').value;
-            document.getElementById('btnFuncionarioWrapper').style.display = (cargo === 'gerente') ? 'block' : 'none';
+            const areaGerente = document.getElementById('managerSection');
+            
+            // Efeito visual de aparecer/desaparecer
+            if (cargo === 'gerente') {
+                areaGerente.style.display = 'block';
+            } else {
+                areaGerente.style.display = 'none';
+            }
         }
 
-        window.onload = function() { carregarBalanco(); mudarCargo(); };
+        window.onload = function() {
+            carregarBalanco();
+            mudarCargo();
+        };
     </script>
 </body>
 </html>

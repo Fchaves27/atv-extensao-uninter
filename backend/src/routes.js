@@ -27,5 +27,6 @@ routes.post('/vendas/teste', async (req, res) => {
 
 // Nova Rota de Venda Real (que baixa estoque)
 routes.post('/realizar-venda', VendaController.realizarVenda);
+routes.get('/dashboard/historico', DashboardController.getHistorico);
 
 module.exports = routes;
