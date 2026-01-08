@@ -7,15 +7,51 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* --- ESTILO GERAL (MANTIDO IGUAL) --- */
-        :root { --primary-color: #2563eb; --bg-color: #f3f4f6; --text-color: #1f2937; --danger-color: #dc2626; --success-color: #16a34a; }
+        /* --- ESTILO GERAL --- */
+        :root { 
+            --primary-color: #2563eb; 
+            --bg-color: #f3f4f6; 
+            --text-color: #1f2937; 
+            --danger-color: #dc2626; 
+            --success-color: #16a34a; 
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* --- CABEÇALHO COM NAVEGAÇÃO --- */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        .header-title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
         .header h1 { font-size: 1.5rem; color: #111827; }
+        
+        /* Botão Voltar (Redondo) */
+        .btn-back {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid #d1d5db;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+            transition: 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-back:hover { background-color: #e5e7eb; transform: translateX(-3px); }
+
+        /* Botões Gerais */
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
         .btn-primary { background-color: var(--primary-color); color: white; }
         .btn-primary:hover { background-color: #1d4ed8; }
@@ -29,10 +65,12 @@
         th { background-color: #f9fafb; font-weight: 600; color: #374151; font-size: 0.9rem; text-transform: uppercase; }
         tr:hover { background-color: #f9fafb; }
         
-        /* Badges e Botões */
+        /* Status Badges */
         .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
         .badge-ok { background-color: #dcfce7; color: var(--success-color); }
         .badge-low { background-color: #fee2e2; color: var(--danger-color); }
+        
+        /* Ações */
         .action-btn { background: none; border: none; cursor: pointer; padding: 6px; font-size: 1.1rem; transition: color 0.2s; }
         .btn-delete { color: #dc2626; }
 
@@ -51,10 +89,17 @@
 
     <div class="container">
         <div class="header">
-            <div>
-                <h1>Controle de Estoque</h1>
-                <p style="color: #6b7280; font-size: 0.9rem;">Gerencie produtos, preços e reposição.</p>
+            <div class="header-title-group">
+                <a href="index.html" class="btn-back" title="Voltar ao Início">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                
+                <div>
+                    <h1>Controle de Estoque</h1>
+                    <p style="color: #6b7280; font-size: 0.9rem;">Gerencie produtos, preços e reposição.</p>
+                </div>
             </div>
+            
             <button class="btn btn-primary" onclick="abrirModal()">
                 <i class="fas fa-plus"></i> Novo Produto
             </button>
@@ -164,22 +209,21 @@
                 });
             } catch (error) {
                 console.error("Erro ao conectar na API:", error);
-                alert("Erro ao conectar no servidor. Verifique se o backend está rodando.");
+                // Removi o alert para não ficar irritante, mantive só o log
             }
         }
 
         // 2. SALVAR (POST)
         document.getElementById('formCadastro').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Impede a página de recarregar
+            event.preventDefault(); 
 
-            // Pega os dados dos inputs
             const dadosProduto = {
                 nome: document.getElementById('nome').value,
                 categoria: document.getElementById('categoria').value,
                 precoCusto: parseFloat(document.getElementById('precoCusto').value),
                 precoVenda: parseFloat(document.getElementById('precoVenda').value),
                 quantidade: parseInt(document.getElementById('quantidade').value),
-                sku: Math.floor(Math.random() * 10000).toString() // Gera um SKU aleatório simples
+                sku: Math.floor(Math.random() * 10000).toString() 
             };
 
             try {
@@ -190,8 +234,8 @@
                 });
                 
                 fecharModal();
-                carregarDadosDoBackend(); // Atualiza a tabela
-                document.getElementById('formCadastro').reset(); // Limpa o formulário
+                carregarDadosDoBackend(); 
+                document.getElementById('formCadastro').reset(); 
 
             } catch (error) {
                 alert("Erro ao salvar produto.");
@@ -206,7 +250,7 @@
                     await fetch(`${API_URL}/${id}`, {
                         method: 'DELETE'
                     });
-                    carregarDadosDoBackend(); // Atualiza a tabela
+                    carregarDadosDoBackend(); 
                 } catch (error) {
                     alert("Erro ao excluir.");
                 }
@@ -232,7 +276,7 @@
             const table = document.getElementById("tabelaEstoque");
             const tr = table.getElementsByTagName("tr");
 
-            for (let i = 1; i < tr.length; i++) {
+            for (let i = 1; i < tr.length; i++) { // Ignora header
                 let tdNome = tr[i].getElementsByTagName("td")[0];
                 let tdCat = tr[i].getElementsByTagName("td")[1];
                 if (tdNome || tdCat) {
@@ -247,7 +291,6 @@
             }
         }
 
-        // Carrega os dados ao abrir a página
         window.onload = carregarDadosDoBackend;
     </script>
 </body>

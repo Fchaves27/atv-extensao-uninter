@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto de Venda (PDV)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { 
+            --primary-color: #2563eb; 
+            --bg-color: #f3f4f6; 
+            --text-color: #1f2937; 
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        
+        .container { max-width: 600px; margin: 0 auto; }
+
+        /* Cabeçalho */
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 20px; background: white; padding: 20px; 
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        .header-title-group { display: flex; align-items: center; gap: 15px; }
+        .header h1 { font-size: 1.5rem; color: #111827; margin: 0; }
+
+        /* Botão Voltar */
+        .btn-back {
+            background-color: white; color: var(--text-color); border: 1px solid #d1d5db;
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; transition: 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-back:hover { background-color: #e5e7eb; transform: translateX(-3px); }
+
+        /* Card de Venda */
+        .venda-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+        
+        /* Botão Vender */
+        .btn-vender { 
+            width: 100%; padding: 15px; background: var(--success-color); color: white; border: none; 
+            border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s; 
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-vender:hover { background: #15803d; transform: translateY(-1px); }
+
+        /* Mensagens */
+        #mensagem { text-align: center; margin-top: 20px; font-weight: bold; padding: 15px; display: none; border-radius: 6px; }
+        .sucesso { background: #dcfce7; color: var(--success-color); border: 1px solid #bbf7d0; }
+        .erro { background: #fee2e2; color: var(--danger-color); border: 1px solid #fecaca; }
+
+        .total-display { text-align: right; margin-bottom: 25px; font-size: 1.3rem; color: #374151; }
+        .total-display strong { color: var(--primary-color); font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-title-group">
+                <a href="index.html" class="btn-back" title="Voltar ao Início">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1>Nova Venda</h1>
+            </div>
+            <i class="fas fa-shopping-cart fa-lg" style="color: #e5e7eb;"></i>
+        </div>
+
+        <div class="venda-card">
+            <form id="formVenda">
+                <div class="form-group">
+                    <label>Selecione o Produto:</label>
+                    <select id="produtoSelect" required>
+                        <option value="">Carregando produtos...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Quantidade:</label>
+                    <input type="number" id="qtdInput" value="1" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Forma de Pagamento:</label>
+                    <select id="pagamentoSelect" required>
+                        <option value="Dinheiro">💵 Dinheiro</option>
+                        <option value="Pix">💠 Pix</option>
+                        <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                        <option value="Cartão de Débito">💳 Cartão de Débito</option>
+                    </select>
+                </div>
+
+                <div class="total-display">
+                    Total: <strong id="totalEstimado">R$ 0,00</strong>
+                </div>
+
+                <button type="submit" class="btn-vender">
+                    <i class="fas fa-check"></i> CONFIRMAR VENDA
+                </button>
+            </form>
+
+            <div id="mensagem"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function carregarProdutos() {
+            try {
+                const res = await fetch(`${API_URL}/produtos`);
+                const produtosLista = await res.json();
+                
+                const select = document.getElementById('produtoSelect');
+                select.innerHTML = '<option value="">Selecione um produto...</option>';
+
+                produtosLista.forEach(p => {
+                    if (p.quantidade > 0) {
+                        select.innerHTML += `<option value="${p.id}" data-preco="${p.precoVenda}">
+                            ${p.nome} (Disp: ${p.quantidade}) - R$ ${p.precoVenda}
+                        </option>`;
+                    }
+                });
+            } catch (erro) {
+                alert("Erro ao conectar no servidor.");
+            }
+        }
+
+        function atualizarTotal() {
+            const select = document.getElementById('produtoSelect');
+            const qtd = document.getElementById('qtdInput').value;
+            const option = select.options[select.selectedIndex];
+            const preco = option.getAttribute('data-preco') || 0;
+
+            const total = preco * qtd;
+            document.getElementById('totalEstimado').innerText = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        document.getElementById('produtoSelect').addEventListener('change', atualizarTotal);
+        document.getElementById('qtdInput').addEventListener('input', atualizarTotal);
+
+        document.getElementById('formVenda').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const produtoId = document.getElementById('produtoSelect').value;
+            const quantidade = document.getElementById('qtdInput').value;
+            const pagamento = document.getElementById('pagamentoSelect').value;
+            const msgDiv = document.getElementById('mensagem');
+
+            try {
+                const res = await fetch(`${API_URL}/realizar-venda`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        produto_id: produtoId, 
+                        quantidade: parseInt(quantidade),
+                        formaPagamento: pagamento
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    msgDiv.className = 'sucesso';
+                    msgDiv.innerText = `✅ Venda realizada! Pagamento: ${pagamento}`;
+                    msgDiv.style.display = 'block';
+                    
+                    carregarProdutos();
+                    document.getElementById('qtdInput').value = 1;
+                    atualizarTotal();
+                    setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
+                } else {
+                    msgDiv.className = 'erro';
+                    msgDiv.innerText = `❌ Erro: ${data.error}`;
+                    msgDiv.style.display = 'block';
+                }
+            } catch (erro) {
+                msgDiv.className = 'erro';
+                msgDiv.innerText = "Erro de conexão.";
+                msgDiv.style.display = 'block';
+            }
+        });
+
+        window.onload = carregarProdutos;
+    </script>
+</body>
+</html>

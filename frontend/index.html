@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Principal - Gestão</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root { --primary-color: #2563eb; --bg-color: #f3f4f6; --text-color: #1f2937; --card-bg: #ffffff; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .user-info { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        select#roleSwitcher { padding: 5px; border-radius: 5px; border: 1px solid #ccc; }
+
+        .chart-section { 
+            background: var(--card-bg); padding: 30px; border-radius: 15px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .chart-container { position: relative; height: 250px; width: 250px; margin-top: 20px; }
+        
+        .finance-summary { display: flex; gap: 30px; margin-top: 20px; text-align: center; }
+        .finance-item h4 { font-size: 0.9rem; color: #6b7280; font-weight: normal; }
+        .finance-item p { font-size: 1.2rem; font-weight: bold; }
+        .text-red { color: #dc2626; }
+        .text-green { color: #16a34a; }
+
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+        .menu-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--card-bg); padding: 30px 20px; border-radius: 15px;
+            text-decoration: none; color: var(--text-color); font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s, background-color 0.2s;
+            border: none; cursor: pointer; width: 100%; font-size: 1rem;
+        }
+        .menu-btn:hover { transform: translateY(-3px); background-color: #f9fafb; }
+        .menu-btn i { font-size: 2.5rem; margin-bottom: 15px; color: var(--primary-color); }
+        .btn-manager { background-color: #e0e7ff; color: #3730a3; }
+        .btn-manager i { color: #4f46e5; }
+        #btnFuncionarioWrapper { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-bar">
+            <h1>Painel Principal</h1>
+            <div class="user-info">
+                <i class="fas fa-user-circle fa-lg"></i>
+                <select id="roleSwitcher" onchange="mudarCargo()">
+                    <option value="vendedor">Sou Vendedor</option>
+                    <option value="gerente">Sou Gerente</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h3>Balanço Financeiro</h3>
+            <p style="color: #6b7280; font-size: 0.9rem;">Investimento em Estoque vs. Faturamento</p>
+            <div class="chart-container">
+                <canvas id="graficoBalanco"></canvas>
+            </div>
+            <div class="finance-summary">
+                <div class="finance-item">
+                    <h4>Em Estoque (Custo)</h4>
+                    <p id="txtInvestimento" class="text-red">R$ 0,00</p>
+                </div>
+                <div class="finance-item">
+                    <h4>Total Vendido</h4>
+                    <p id="txtFaturamento" class="text-green">R$ 0,00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-grid">
+            <a href="pdv.html" class="menu-btn"><i class="fas fa-cash-register"></i> Nova Venda</a>
+            <a href="clientes.html" class="menu-btn"><i class="fas fa-users"></i> Clientes</a>
+            <a href="estoque.html" class="menu-btn"><i class="fas fa-boxes"></i> Estoque</a>
+            <div id="btnFuncionarioWrapper">
+                <button class="menu-btn btn-manager" onclick="alert('Funcionalidade futura')">
+                    <i class="fas fa-user-tie"></i> Cadastrar Funcionário
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let graficoBalanco;
+        async function carregarBalanco() {
+            try {
+                const response = await fetch('http://localhost:3000/dashboard/resumo');
+                const dados = await response.json();
+                
+                document.getElementById('txtInvestimento').innerText = formatarMoeda(dados.investimento);
+                document.getElementById('txtFaturamento').innerText = formatarMoeda(dados.faturamento);
+
+                const ctx = document.getElementById('graficoBalanco').getContext('2d');
+                if (graficoBalanco) graficoBalanco.destroy();
+
+                graficoBalanco = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Investido em Estoque (Custo)', 'Faturamento (Vendas)'],
+                        datasets: [{
+                            data: [dados.investimento, dados.faturamento],
+                            backgroundColor: ['#ef4444', '#22c55e'],
+                            borderWidth: 0,
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            } catch (error) { console.error("Erro ao carregar gráfico:", error); }
+        }
+
+        function formatarMoeda(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function mudarCargo() {
+            const cargo = document.getElementById('roleSwitcher').value;
+            document.getElementById('btnFuncionarioWrapper').style.display = (cargo === 'gerente') ? 'block' : 'none';
+        }
+
+        window.onload = function() { carregarBalanco(); mudarCargo(); };
+    </script>
+</body>
+</html>
