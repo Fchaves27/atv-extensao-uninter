@@ -28,12 +28,20 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .top-bar h1 { color: #111827; font-size: 1.8rem; }
 
-        /* Simulador de Login */
+        /* Card do Usuário (Topo) */
         .user-info { 
-            display: flex; align-items: center; gap: 10px; background: white; 
+            display: flex; align-items: center; gap: 15px; background: white; 
             padding: 10px 20px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
         }
-        select#roleSwitcher { padding: 5px; border-radius: 6px; border: 1px solid #d1d5db; background: #f9fafb; cursor: pointer; }
+        .user-details { display: flex; flex-direction: column; line-height: 1.2; }
+        .user-name { font-weight: bold; font-size: 0.95rem; color: #374151; }
+        .user-role { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .btn-logout {
+            border: none; background: none; color: #dc2626; cursor: pointer; 
+            font-size: 1.1rem; transition: 0.2s; padding: 5px;
+        }
+        .btn-logout:hover { color: #b91c1c; transform: scale(1.1); }
 
         /* Dashboard (Gráfico) */
         .chart-section { 
@@ -70,7 +78,7 @@
 
         /* --- ÁREA GERENCIAL (Exclusiva) --- */
         #managerSection {
-            display: none; /* Escondido por padrão */
+            display: none; /* Escondido por padrão, o JS ativa */
             grid-column: 1 / -1; /* Ocupa toda a largura */
             background-color: var(--manager-bg);
             border: 2px dashed var(--manager-border);
@@ -91,9 +99,12 @@
             flex: 1; /* Botões ocupam tamanho igual */
             background-color: white; color: var(--manager-text);
             border: 1px solid var(--manager-border);
+            text-decoration: none; display: flex; flex-direction: column; align-items: center;
+            padding: 20px; border-radius: 10px; font-weight: 600; gap: 10px; cursor: pointer;
+            transition: 0.2s;
         }
-        .btn-manager i { color: #7c3aed; }
-        .btn-manager:hover { background-color: #ede9fe; }
+        .btn-manager i { color: #7c3aed; font-size: 1.5rem; }
+        .btn-manager:hover { background-color: #ede9fe; transform: translateY(-2px); }
 
     </style>
 </head>
@@ -103,12 +114,15 @@
         <div class="top-bar">
             <h1>Gestão Financeira</h1>
             <div class="user-info">
-                <i class="fas fa-user-circle fa-lg" style="color: #6b7280;"></i>
-                <span>Acesso:</span>
-                <select id="roleSwitcher" onchange="mudarCargo()">
-                    <option value="vendedor">Vendedor</option>
-                    <option value="gerente">Gerente</option>
-                </select>
+                <i class="fas fa-user-circle fa-2x" style="color: #6b7280;"></i>
+                <div class="user-details">
+                    <span class="user-name" id="nomeUsuarioDisplay">Carregando...</span>
+                    <span class="user-role" id="cargoDisplay">...</span>
+                </div>
+                <div style="width: 1px; height: 30px; background: #e5e7eb; margin: 0 5px;"></div>
+                <button class="btn-logout" onclick="fazerLogout()" title="Sair do Sistema">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
         </div>
 
@@ -152,12 +166,12 @@
                 </div>
                 
                 <div class="manager-grid">
-                    <a href="historico.html" class="menu-btn btn-manager">
+                    <a href="historico.html" class="btn-manager">
                         <i class="fas fa-list-ul"></i>
                         <span>Auditoria / Logs</span>
                     </a>
 
-                    <button class="menu-btn btn-manager" onclick="alert('Tela de cadastro de funcionários...')">
+                    <button class="btn-manager" onclick="alert('Tela de cadastro de funcionários (Em Breve)')">
                         <i class="fas fa-user-tie"></i>
                         <span>Cadastrar Equipe</span>
                     </button>
@@ -167,7 +181,29 @@
     </div>
 
     <script>
-        // --- 1. Gráfico ---
+        // --- 1. SEGURANÇA: Verifica se está logado ---
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+        if (!usuarioLogado) {
+            window.location.href = 'login.html'; // Redireciona se não tiver login
+        } else {
+            // Preenche o cabeçalho
+            document.getElementById('nomeUsuarioDisplay').innerText = usuarioLogado.nome;
+            document.getElementById('cargoDisplay').innerText = usuarioLogado.cargo;
+        }
+
+        // --- 2. PERMISSÕES: Mostra/Esconde Área Gerencial ---
+        function aplicarPermissoes() {
+            const areaGerente = document.getElementById('managerSection');
+            
+            if (usuarioLogado && usuarioLogado.cargo === 'gerente') {
+                areaGerente.style.display = 'block';
+            } else {
+                areaGerente.style.display = 'none';
+            }
+        }
+
+        // --- 3. GRÁFICO: Carrega dados do Backend ---
         let graficoBalanco;
         async function carregarBalanco() {
             try {
@@ -199,22 +235,20 @@
             return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // --- 2. Lógica de Cargo ---
-        function mudarCargo() {
-            const cargo = document.getElementById('roleSwitcher').value;
-            const areaGerente = document.getElementById('managerSection');
-            
-            // Efeito visual de aparecer/desaparecer
-            if (cargo === 'gerente') {
-                areaGerente.style.display = 'block';
-            } else {
-                areaGerente.style.display = 'none';
+        // --- 4. LOGOUT ---
+        function fazerLogout() {
+            if(confirm("Deseja realmente sair?")) {
+                localStorage.removeItem('usuarioLogado');
+                window.location.href = 'login.html';
             }
         }
 
+        // INICIALIZAÇÃO
         window.onload = function() {
-            carregarBalanco();
-            mudarCargo();
+            if (usuarioLogado) { // Só roda se tiver passado pelo check de login
+                aplicarPermissoes();
+                carregarBalanco();
+            }
         };
     </script>
 </body>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gestão de Negócios</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #2563eb; --bg: #f3f4f6; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
+        body { 
+            background: var(--bg); height: 100vh; 
+            display: flex; align-items: center; justify-content: center; 
+        }
+
+        .login-card {
+            background: white; padding: 40px; border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card i { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
+        .login-card h2 { margin-bottom: 10px; color: #1f2937; }
+        .login-card p { color: #6b7280; margin-bottom: 30px; font-size: 0.9rem; }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+        .form-group input {
+            width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px;
+            font-size: 1rem; outline: none; transition: 0.2s;
+        }
+        .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        .btn-login {
+            width: 100%; padding: 12px; background: var(--primary); color: white;
+            border: none; border-radius: 6px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-login:hover { background: #1d4ed8; }
+
+        #erroMsg { 
+            color: #dc2626; background: #fee2e2; padding: 10px; 
+            border-radius: 6px; margin-bottom: 20px; display: none; font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <i class="fas fa-chart-line"></i>
+        <h2>Bem-vindo</h2>
+        <p>Faça login para acessar o sistema.</p>
+
+        <div id="erroMsg"></div>
+
+        <form id="formLogin">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="admin@admin.com" required>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="senha" placeholder="********" required>
+            </div>
+            <button type="submit" class="btn-login">ENTRAR</button>
+        </form>
+        
+        <p style="margin-top: 20px; font-size: 0.8rem;">
+            Acesso padrão: admin@admin.com / 123
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('formLogin').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const erroDiv = document.getElementById('erroMsg');
+
+            try {
+                const res = await fetch('http://localhost:3000/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // 1. Salva os dados do usuário no navegador
+                    localStorage.setItem('usuarioLogado', JSON.stringify(data));
+                    
+                    // 2. Redireciona para o Hub
+                    window.location.href = 'index.html';
+                } else {
+                    erroDiv.innerText = data.error;
+                    erroDiv.style.display = 'block';
+                }
+            } catch (error) {
+                erroDiv.innerText = "Erro ao conectar no servidor.";
+                erroDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
