@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Funcionário</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Tema Gerencial (Roxo) */
+        :root { --primary: #7c3aed; --bg: #f5f3ff; --text: #4c1d95; }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+
+        /* Card */
+        .card {
+            background: white; padding: 30px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.1); border: 1px solid #ddd6fe;
+        }
+
+        /* Header */
+        .header { display: flex; align-items: center; margin-bottom: 20px; gap: 15px; }
+        .btn-back {
+            text-decoration: none; color: var(--primary); font-size: 1.2rem;
+            width: 40px; height: 40px; border-radius: 50%; background: #ede9fe;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .btn-back:hover { background: #ddd6fe; transform: translateX(-3px); }
+
+        h2 { font-size: 1.5rem; }
+
+        /* Form */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        input, select {
+            width: 100%; padding: 10px; border: 1px solid #c4b5fd; border-radius: 6px;
+            font-size: 1rem; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2); }
+
+        .btn-submit {
+            width: 100%; padding: 12px; background: var(--primary); color: white;
+            border: none; border-radius: 6px; font-weight: bold; font-size: 1rem;
+            cursor: pointer; transition: 0.2s; margin-top: 10px;
+        }
+        .btn-submit:hover { background: #6d28d9; }
+
+        #mensagem { margin-top: 15px; padding: 10px; border-radius: 6px; text-align: center; display: none; font-weight: bold; }
+        .sucesso { background: #dcfce7; color: #166534; }
+        .erro { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <h2>Novo Colaborador</h2>
+        </div>
+
+        <div class="card">
+            <form id="formCadastro">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="nome" placeholder="Ex: João da Silva" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email de Acesso</label>
+                    <input type="email" id="email" placeholder="joao@loja.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Senha Inicial</label>
+                    <input type="text" id="senha" placeholder="******" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Cargo / Permissão</label>
+                    <select id="cargo" required>
+                        <option value="vendedor">Vendedor (Acesso Padrão)</option>
+                        <option value="gerente">Gerente (Acesso Total)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-user-plus"></i> CADASTRAR
+                </button>
+            </form>
+            <div id="mensagem"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. SEGURANÇA: Só Gerente entra aqui
+        const usuarioLogado = JSON.parse(localStorage.getItem('usuarioLogado'));
+        if (!usuarioLogado || usuarioLogado.cargo !== 'gerente') {
+            alert("Acesso Negado. Apenas gerentes podem cadastrar equipe.");
+            window.location.href = 'index.html';
+        }
+
+        // 2. ENVIAR CADASTRO
+        document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const cargo = document.getElementById('cargo').value;
+            const msgDiv = document.getElementById('mensagem');
+
+            try {
+                const res = await fetch('http://localhost:3000/usuarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha, cargo })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    msgDiv.className = 'sucesso';
+                    msgDiv.innerText = `✅ Usuário ${data.nome} cadastrado com sucesso!`;
+                    msgDiv.style.display = 'block';
+                    document.getElementById('formCadastro').reset();
+                } else {
+                    msgDiv.className = 'erro';
+                    msgDiv.innerText = `❌ Erro: ${data.error}`;
+                    msgDiv.style.display = 'block';
+                }
+
+            } catch (error) {
+                msgDiv.className = 'erro';
+                msgDiv.innerText = "Erro ao conectar no servidor.";
+                msgDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

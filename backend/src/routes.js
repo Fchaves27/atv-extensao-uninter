@@ -17,6 +17,7 @@ const AuthController = require('./controllers/AuthController'); // <--- NOVO
 
 // Autenticação
 routes.post('/login', AuthController.login);
+routes.post('/usuarios', AuthController.criarUsuario);
 
 // Rotas existentes...
 routes.get('/produtos', ProdutoController.index);
